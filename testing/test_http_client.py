@@ -1,3 +1,4 @@
+#!/usr/bin/python3
 """
 https://github.com/Anorov/PySocks
 
