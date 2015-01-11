@@ -45,7 +45,7 @@ request and response spec
 
 - response
     - VN(1)
-        - socks protocol version: 4
+        - socks protocol version: 0
     - CD(1)
         - result code
             - 90: [success] request granted
