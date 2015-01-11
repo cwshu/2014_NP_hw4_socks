@@ -1,0 +1,2 @@
+file ../build/socks4d
+set follow-fork-mode child
