@@ -87,6 +87,8 @@ void socks4_request_reader_and_parser(Sock4Request& request, socketfd_t connecti
 socketfd_t connect_to_app_server(SocketAddr server_addr);
 void relay_data_between_2_sockets(socketfd_t client_socket, socketfd_t server_socket);
 
+void set_nonblocking_flag(socketfd_t fd);
+
 const char SOCKS4_IP[] = "0.0.0.0";
 const int SOCK4_DEFAULT_PORT = 54444;
 int main(int argc, char *argv[]){
@@ -150,7 +152,7 @@ void socks4_service(socketfd_t client_socket, SocketAddr client_addr){
 
     if( request.command_code == SOCKS4_CONNECT ){
         // CONNECT:
-        std::cout << "recieve CONNECT request" << std::endl;
+        // std::cout << "recieve CONNECT request" << std::endl;
 
         // 2. authentication and check application server can be connected.
         // connect to application server
@@ -167,7 +169,7 @@ void socks4_service(socketfd_t client_socket, SocketAddr client_addr){
             return;
         }
 
-        std::cout << "connect to application server success" << std::endl;
+        std::cout << "SOCKS_CONNECT GRANTED ...." << std::endl;
         Sock4Response success_response(SOCKS4_SUCCESS);
         unsigned char response_buf[SOCKS4_RES_LEN];
         success_response.to_buf(response_buf);
@@ -176,7 +178,6 @@ void socks4_service(socketfd_t client_socket, SocketAddr client_addr){
         // 4. relay data between application client and server.
         relay_data_between_2_sockets(client_socket, server_socket);
         /* connection finish, both end are closing connection */
-        close(client_socket);
         close(server_socket);
 
         return;
@@ -202,8 +203,8 @@ void socks4_request_reader_and_parser(Sock4Request& request, socketfd_t connecti
 
         // data doesn't enough
         total_size += size;
-        std::cout << "total_size: " << total_size << std::endl;
-        std::cout << "request_buf: " << request_buf << std::endl;
+        // std::cout << "total_size: " << total_size << std::endl;
+        // std::cout << "request_buf: " << request_buf << std::endl;
         if( total_size < 8 ){
             continue;
         }
@@ -247,37 +248,7 @@ socketfd_t connect_to_app_server(SocketAddr server_addr){
     return app_server_socket;
 }
 
-void set_nonblocking_flag(socketfd_t fd){
-    int flags = fcntl(fd, F_GETFL, 0);
-    fcntl(fd, F_SETFL, flags | O_NONBLOCK);
-}
-
-bool is_closed(socketfd_t sock) {
-    /*
-    fd_set rfd;
-    FD_ZERO(&rfd);
-    FD_SET(sock, &rfd);
-    timeval tv = { 0 };
-    select(sock+1, &rfd, 0, 0, &tv);
-    if (!FD_ISSET(sock, &rfd))
-      return false;
-
-    int n = 0;
-    ioctl(sock, FIONREAD, &n);
-    return n == 0;
-    */
-    char x;
-    ssize_t r = ::recv(sock, &x, 1, MSG_DONTWAIT|MSG_PEEK);
-
-    std::cout << "r: " << r << std::endl;
-
-    return r == 0;
-}
-
 void relay_data_between_2_sockets(socketfd_t client_socket, socketfd_t server_socket){
-
-    if( is_closed(client_socket) ) return;
-    if( is_closed(server_socket) ) return;
 
     set_nonblocking_flag(client_socket);
     set_nonblocking_flag(server_socket);
@@ -285,23 +256,27 @@ void relay_data_between_2_sockets(socketfd_t client_socket, socketfd_t server_so
     /* init */
     fd_set read_fds;
     FD_ZERO(&read_fds);
-    int max_fds = 2;
+    int max_fds = 0;
 
     /* set listening fds */
     FD_SET(client_socket, &read_fds);
+    max_fds = (client_socket > max_fds) ? client_socket : max_fds;
     FD_SET(server_socket, &read_fds);
+    max_fds = (server_socket > max_fds) ? server_socket : max_fds;
+
+    max_fds++;
 
     while( 1 ){
         fd_set select_read_fds = read_fds;
         int select_ret = select(max_fds, &select_read_fds, NULL, NULL, NULL);
-        std::cout << "select return\n";
+        // std::cout << "select return\n";
 
         if( select_ret < 0 ){
              perror_and_exit("select error");
         }
         else if( FD_ISSET(client_socket, &select_read_fds) ){
             /* recieve client and send to server */
-            std::string client_data = str::read(server_socket, 1024, true);
+            std::string client_data = str::read(client_socket, 1024, true);
             if( client_data.empty() ){
                 /* if any socket is closed, then data can be relayed, end of all connection */
                 return;
@@ -309,12 +284,17 @@ void relay_data_between_2_sockets(socketfd_t client_socket, socketfd_t server_so
 
             write_all(server_socket, client_data.c_str(), client_data.size());
 
-            std::cout << "client (size, data): " << client_data.size();
-            std::cout << ", " << client_data << std::endl;
+            std::cout << "<Content: client> size: " << client_data.size();
+            if( client_data.size() > 10 ){
+                std::cout << "\n" << client_data.substr(0, 10) << " ... " << std::endl;
+            }
+            else{
+                std::cout << "\n" << client_data << std::endl;
+            }
         }
         else if( FD_ISSET(server_socket, &select_read_fds) ){
             /* recieve server and send to client */
-            std::string server_data = str::read(client_socket, 1024, true);
+            std::string server_data = str::read(server_socket, 1024, true);
             if( server_data.empty() ){
                 /* if any socket is closed, then data can be relayed, end of all connection */
                 return;
@@ -322,8 +302,18 @@ void relay_data_between_2_sockets(socketfd_t client_socket, socketfd_t server_so
 
             write_all(client_socket, server_data.c_str(), server_data.size());
 
-            std::cout << "server (size, data): " << server_data.size();
-            std::cout << ", " << server_data << std::endl;
+            std::cout << "<Content: server> size: " << server_data.size();
+            if( server_data.size() > 10 ){
+                std::cout << "\n" << server_data.substr(0, 10) << " ... " << std::endl;
+            }
+            else{
+                std::cout << "\n" << server_data << std::endl;
+            }
         }
     }
+}
+
+void set_nonblocking_flag(socketfd_t fd){
+    int flags = fcntl(fd, F_GETFL, 0);
+    fcntl(fd, F_SETFL, flags | O_NONBLOCK);
 }
