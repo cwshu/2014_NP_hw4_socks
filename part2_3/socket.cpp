@@ -1,4 +1,6 @@
+// #include <iostream>
 #include <cstring>
+#include <cstdint>
 
 #include <sys/socket.h>
 #include <sys/types.h>
@@ -74,4 +76,56 @@ socketfd_t socket_accept(socketfd_t socketfd, SocketAddr& accept_addr){
 
     accept_addr.from_sockaddr_in(client_addr);
     return connection_fd;
+}
+
+/* IPv4AddressSet */
+IPv4AddressSet::IPv4AddressSet(){
+    // all IPv4 address
+    start_ip_nbyte = 0;
+    netmask = 0;
+}
+
+uint32_t IPv4AddressSet::get_netmask_nbyte(){
+    /* netmask to netmask_nbyte
+     *  0 => 0x000 ... 00 (32 bits uint)
+     *  1 => 0x100 ... 00 (32 bits uint)
+     *  2 => 0x110 ... 00 (32 bits uint)
+     *             ...
+     * 32 => 0x111 ... 11 (32 bits uint)
+     *
+     * method:
+     *  netmask_hbyte: 1 => 31 => 0x011 ... 11 (2^31 - 1) => 0x100 ... 00 (bitwise not)
+     */
+    uint32_t reverse_netmask_hbyte = (1 << (32 - netmask)) - 1;
+    uint32_t netmask_hbyte = ~reverse_netmask_hbyte; // (bitwise not)
+    uint32_t netmask_nbyte = htonl(netmask_hbyte);
+    return netmask_nbyte;
+}
+
+bool IPv4AddressSet::is_belong_to_set(uint32_t ip_nbyte){
+    uint32_t netmask_nbyte = get_netmask_nbyte();
+    // std::cout << std::hex << start_ip_nbyte << " " << ip_nbyte << " " << netmask_nbyte << "\n";
+    return (start_ip_nbyte & netmask_nbyte) == (ip_nbyte & netmask_nbyte);
+}
+
+std::string IPv4AddressSet::to_str(){
+    // CIDR format
+    std::string ip_str = ip_nbyte_to_str(start_ip_nbyte);
+    // "ip_str/netmask"
+    ip_str = ip_str + "/" + std::to_string(netmask);
+    return ip_str;
+}
+
+/* IP type translation */
+std::string ip_nbyte_to_str(uint32_t ip_nbyte){
+    struct in_addr ip_in_addr;
+    ip_in_addr.s_addr = ip_nbyte;
+    std::string ip_str = string(inet_ntoa(ip_in_addr));
+    return ip_str;
+}
+
+uint32_t ip_string_to_nbyte(std::string ip_str){
+    struct in_addr ip_in_addr;
+    inet_aton(ip_str.c_str(), &ip_in_addr);
+    return ip_in_addr.s_addr;
 }
