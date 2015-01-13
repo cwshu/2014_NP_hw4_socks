@@ -12,75 +12,12 @@
 #include "socket.h"
 #include "server_arch.h"
 #include "io_wrapper.h"
-
-const unsigned char SOCKS4_ERROR = 255;
-const unsigned char SOCKS4_CONNECT = 1;
-const unsigned char SOCKS4_BIND = 2;
-class Sock4Request{
-public:
-    SocketAddr client_addr;
-    unsigned char version;
-    unsigned char command_code;
-    SocketAddr dest_addr; // destination address
-    std::string userid;
-
-    Sock4Request(){
-        version = 4;
-        command_code = SOCKS4_ERROR;
-    }
-
-    void print(){
-        std::cout << "SOCKS4 request\n";
-        std::cout << "VN: " << (int)version << ", CD: " << (int)command_code;
-        std::cout << ", DST IP: " << dest_addr.ipv4_addr_str << ", DST PORT: " << dest_addr.port_hbytes;
-        std::cout << ", USERID: " << userid << "\n";
+#include "sockslib.h"
 
 
-        std::cout << "Src = ";
-        std::cout << client_addr.ipv4_addr_str << "(" << client_addr.port_hbytes << "), ";
-        std::cout << "Dst = ";
-        std::cout << dest_addr.ipv4_addr_str << "(" << dest_addr.port_hbytes << ")\n";
-    }
-};
 
-const int SOCKS4_RES_LEN = 8; // 1+1+2+4
-const unsigned char SOCKS4_SUCCESS = 90;
-const unsigned char SOCKS4_FAILED = 91;
-const unsigned char SOCKS4_INETD_FAILED = 92;
-const unsigned char SOCKS4_USERID_FAILED = 93;
-class Sock4Response{
-public:
-    unsigned char version;
-    unsigned char result_code;
-    SocketAddr dest_addr; // destination address
 
-    Sock4Response(){
-        version = 0;
-        result_code = SOCKS4_ERROR;
-    }
-    Sock4Response(unsigned char result_code){
-        version = 0;
-        this->result_code = result_code;
-    }
 
-    void to_buf(unsigned char* buf){
-        print();
-
-        buf[0] = version;
-        buf[1] = result_code;
-
-        uint16_t* port_nbytes_ptr = (uint16_t*)(buf+2);
-        uint32_t* ipv4_nbytes_ptr = (uint32_t*)(buf+4);
-        dest_addr.get_sockaddr(ipv4_nbytes_ptr, port_nbytes_ptr);
-    }
-
-    void print(){
-        std::cout << "SOCKS4 response\n";
-        std::cout << "VN: " << (int)version << ", CD: " << (int)result_code;
-        std::cout << ", DST IP: " << dest_addr.ipv4_addr_str << ", DST PORT: " << dest_addr.port_hbytes;
-        std::cout << "\n";
-    }
-};
 
 void socks4_service(socketfd_t client_socket, SocketAddr client_addr);
 void socks4_request_reader_and_parser(Sock4Request& request, socketfd_t connection_socket);

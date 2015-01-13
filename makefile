@@ -6,7 +6,7 @@ CXXFLAGS = -std=c++11 -g
 PREFIX = ./build
 PART2_3_SRC = ./part2_3
 EXE = socks4d
-OBJS = socks4d.o server_arch.o socket.o io_wrapper.o
+OBJS = socks4d.o server_arch.o socket.o io_wrapper.o sockslib.o
 
 EXE_PATH = $(addprefix $(PREFIX)/, $(EXE))
 OBJS_PATH = $(addprefix $(PREFIX)/, $(OBJS))
