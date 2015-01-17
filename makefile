@@ -49,6 +49,8 @@ endif
 
 # release version
 
+all: release $(PART1_EXE_PATH) $(PART2_3_EXE_PATH)
+
 release:
 	cp -r $(TEST_SRC_DIR)/ $(PART1_SRC_DIR)/
 	cp -r $(TEST_SRC_DIR)/ $(PART2_3_SRC_DIR)/
@@ -56,7 +58,6 @@ release:
 rclean:
 	rm -rf $(PART1_SRC_DIR) $(PART2_3_SRC_DIR)
 
-all: release $(PART1_EXE_PATH) $(PART2_3_EXE_PATH)
 
 clean: 
 	rm -f $(PART1_EXE_PATH) $(PART1_OBJS_PATH)

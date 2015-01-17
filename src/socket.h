@@ -35,7 +35,7 @@ socketfd_t socket_accept(socketfd_t socketfd, SocketAddr& accept_addr);
 /* IPv4AddressSet */
 struct IPv4AddressSet{
     uint32_t start_ip_nbyte;
-    int netmask; // 0 ~ 32
+    uint32_t netmask; // 0 ~ 32
 
     IPv4AddressSet();
     uint32_t get_netmask_nbyte();

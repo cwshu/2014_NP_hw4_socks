@@ -96,7 +96,11 @@ uint32_t IPv4AddressSet::get_netmask_nbyte(){
      * method:
      *  netmask_hbyte: 1 => 31 => 0x011 ... 11 (2^31 - 1) => 0x100 ... 00 (bitwise not)
      */
-    uint32_t reverse_netmask_hbyte = (1 << (32 - netmask)) - 1;
+    if( netmask == 0 ){
+        return 0;
+    }
+
+    uint32_t reverse_netmask_hbyte = (1u << (32u - netmask)) - 1u;
     uint32_t netmask_hbyte = ~reverse_netmask_hbyte; // (bitwise not)
     uint32_t netmask_nbyte = htonl(netmask_hbyte);
     return netmask_nbyte;

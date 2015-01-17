@@ -1,2 +1,4 @@
-file ../build/socks4d
+file test_build/socks4d
 set follow-fork-mode child
+br open_and_parse_firewall_rule
+br Socks4FirewallRules::is_ip_pass_rule
