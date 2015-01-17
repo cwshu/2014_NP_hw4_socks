@@ -3,4 +3,7 @@
 
 # build things
 *.o
+part1/
+part2_3/
 build/
+test_build/
