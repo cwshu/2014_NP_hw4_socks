@@ -28,14 +28,14 @@ struct SingleSocks4FirewallRule: public IPv4AddressSet{
 };
 
 struct Socks4FirewallRules{
-    std::vector<SingleSocks4FirewallRule> ip_permit_rules; 
-    
+    std::vector<SingleSocks4FirewallRule> ip_permit_rules;
+
     bool is_ip_pass_rule(uint32_t ip_nbyte, char kind){
         for( auto ip_permit_rule : ip_permit_rules ){
             if( ip_permit_rule.kind != kind ){
                 continue;
             }
-            
+
             if( ip_permit_rule.is_belong_to_set(ip_nbyte) ){
                 return ip_permit_rule.is_permit;
             }
@@ -44,7 +44,7 @@ struct Socks4FirewallRules{
     }
 
     void add_rule_at_last(SingleSocks4FirewallRule& rule){
-        ip_permit_rules.push_back(rule);       
+        ip_permit_rules.push_back(rule);
     }
 
     void print_rules(){
@@ -53,7 +53,7 @@ struct Socks4FirewallRules{
                 std::cout << "permit ";
             else
                 std::cout << "deny ";
-            
+
             std::cout << ip_permit_rule.kind;
             std::cout << " " << ip_permit_rule.to_str() << std::endl;
         }
@@ -77,7 +77,7 @@ void open_and_parse_firewall_rule(Socks4FirewallRules& firewall_rules, std::stri
     setting_file.open(filename, std::ios::in);
 
     while( 1 ){
-        /* one_line_rule will be each line in setting_file 
+        /* one_line_rule will be each line in setting_file
          */
         std::string one_line_rule;
         if( !std::getline(setting_file, one_line_rule) ){
@@ -94,15 +94,15 @@ void open_and_parse_firewall_rule(Socks4FirewallRules& firewall_rules, std::stri
         this_rule.start_ip_nbyte = ip_string_to_nbyte(CIDR_ip_str);
         this_rule.netmask = std::stoi(CIDR_netmask_str);
 
-        bool is_permit;     
-        char command_code;       
-        if( permit_str == "permit" )    
+        bool is_permit;
+        char command_code;
+        if( permit_str == "permit" )
             is_permit = true;
-        else if( permit_str == "deny" ) 
+        else if( permit_str == "deny" )
             is_permit = false;
         else{
             std::cout << "[socks.conf] syntax error" << one_line_rule_copy << std::endl;
-            continue; /* syntax error */ 
+            continue; /* syntax error */
         }
         if( command_code_str == "c" || command_code_str == "b" )
             command_code = command_code_str[0];
@@ -110,12 +110,12 @@ void open_and_parse_firewall_rule(Socks4FirewallRules& firewall_rules, std::stri
             std::cout << "[socks.conf] syntax error" << one_line_rule_copy << std::endl;
             continue; /* syntax error */
         }
-        
+
         this_rule.is_permit = is_permit;
         this_rule.kind = command_code;
 
         firewall_rules.add_rule_at_last(this_rule);
-    } 
+    }
 
     setting_file.close();
 }
@@ -131,7 +131,7 @@ int main(int argc, char *argv[]){
     if(argc == 2){
         socks4_addr.port_hbytes = strtol(argv[1], NULL, 0);
     }
-    
+
     /* listening ras first */
     socketfd_t sock4_listen_socket;
     sock4_listen_socket = socket(AF_INET, SOCK_STREAM, 0);
@@ -150,7 +150,7 @@ int main(int argc, char *argv[]){
     return 0;
 }
 
-void socks4_service(socketfd_t client_socket, SocketAddr client_addr){
+void socks4_service(socketfd_t client_socket, SocketAddr& client_addr){
     /*
      * socks4 server:
      * accept the connection of client now. (fd: client_socket)
@@ -158,20 +158,20 @@ void socks4_service(socketfd_t client_socket, SocketAddr client_addr){
      * 1. recieve and parse the socks request
      *    1-1. CONNECT
      *    1-2. BIND
-     * 
+     *
      * CONNECT:
-     *    
+     *
      *    2. authentication and check application server can be connected.
      *    3. return socks response.
      *    4. relay data between application client and server.
      *
      * BIND:
-     *    
+     *
      *    2. [optional] authentication client ip/port.
      *    3. prepare one port for application server to connect.
      *    4. return 1st socks response to client, tell the socket address.
      *    5. wait for application server connection.
-     *    6. return 2nd socket response to client, 
+     *    6. return 2nd socket response to client,
      *    7. relay data between application client and server.
      */
 
@@ -199,12 +199,12 @@ void socks4_service(socketfd_t client_socket, SocketAddr client_addr){
         }
         else{
             std::cout << "SOCKS_CONNECT DENY ...." << std::endl;
-            return;       
+            return;
         }
 
         // 2. authentication and check application server can be connected.
         // connect to application server
-        socketfd_t server_socket = connect_to_app_server(request.dest_addr); 
+        socketfd_t server_socket = connect_to_app_server(request.dest_addr);
 
         // 3. return socks response.
         if( server_socket < 0 ){
@@ -221,7 +221,7 @@ void socks4_service(socketfd_t client_socket, SocketAddr client_addr){
         unsigned char response_buf[SOCKS4_RES_LEN];
         success_response.to_buf(response_buf);
         write_all(client_socket, response_buf, SOCKS4_RES_LEN);
-        
+
         // 4. relay data between application client and server.
         relay_data_between_2_sockets(client_socket, server_socket);
         /* connection finish, both end are closing connection */
