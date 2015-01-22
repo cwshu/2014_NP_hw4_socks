@@ -60,7 +60,7 @@ struct Socks4FirewallRules{
     }
 };
 
-void socks4_service(socketfd_t client_socket, SocketAddr client_addr);
+void socks4_service(socketfd_t client_socket, SocketAddr& client_addr);
 void socks4_request_reader_and_parser(Sock4Request& request, socketfd_t connection_socket);
 socketfd_t connect_to_app_server(SocketAddr server_addr);
 void relay_data_between_2_sockets(socketfd_t client_socket, socketfd_t server_socket);
