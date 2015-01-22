@@ -50,13 +50,20 @@ void print_html_after_content();
 int main(int argc, char *argv[]){
     /*
      * 1. parse env QUERY_STRING
-     * 2. check connection_server
-     * 3. connect to server, and print response
-     *    3.1. connect to server (non-blocking)
-     *    3.2. read data from batch file, and send data as input to server
-     *    3.3. get response from server, and print as html_version to stdout
+     * 2. connect to server, and print response
+     *    2.1. connect to server (non-blocking)
+     *    2.2. read data from batch file, and send data as input to server
+     *    2.3. get response from server, and print as html_version to stdout
      */
 
+    /*
+     * 1. parse env QUERY_STRING
+     *    
+     * data structure transformation
+     *   env[QUERY_STRING]: string with key/value pair data
+     *   query_parameters: map (key/value data structure)   
+     *   all_requests: vector of every Request (key/value pair of hi, pi, and fi, (shi, spi))
+     */
     std::map<std::string, std::string> query_parameters;
     query_parameters = cgi::http_get_parameters();
 
@@ -82,7 +89,8 @@ int main(int argc, char *argv[]){
         err_log << req.batch_file << std::endl;
     }
 
-    /* part3 */
+    /* part2 */
+
     /* initialization of every Request
      * 1. make an connection
      * 2. open batch_file
@@ -120,10 +128,8 @@ int main(int argc, char *argv[]){
         req.connect_server(true);
     }
 
-    // std::cerr << "send out\n";
-
-    /* recieve msg from server and print out */
-    fd_set read_fds, write_fds;
+    /* set (read_fds, max_fd) for [ server_fd in all_requests ] */
+    fd_set read_fds;
     int max_fd = -1;
     FD_ZERO(&read_fds);
     for( const auto& req: all_requests ){
@@ -136,6 +142,7 @@ int main(int argc, char *argv[]){
     }
     max_fd += 1;
 
+    /* send data to/recv from server and print out message in html format */
     err_log << "request_num start:" << request_num << std::endl;
 
     print_http_header();
@@ -157,16 +164,18 @@ int main(int argc, char *argv[]){
 
                 err_log << "fd " << req.server_fd << " can be read\n";
 
-                std::string msg;
-                msg = req.read_server_response(1024, true);
+                std::string msg = req.read_server_response(1024, true);
 
                 err_log << "msg: " << msg << "\n";
 
                 if( msg.empty() ){
-                    /* this server has no response */
+                    /* request server has no more response, it closes connection */
                     err_log << "FD_CLR: " << req.addr.ipv4_addr_str << std::endl;
+
                     FD_CLR(req.server_fd, &read_fds);
+
                     err_log << "FD_CLR finish: " << req.addr.port_hbytes << std::endl;
+
                     close(req.server_fd);
                     req.is_server_connect = false;
                     request_num--;
@@ -183,7 +192,9 @@ int main(int argc, char *argv[]){
     }
 
     err_log << "end of requests\n";
+
     print_html_after_content();
+
     err_log << "print_html_after_content() finish\n";
 
     err_log.close();
