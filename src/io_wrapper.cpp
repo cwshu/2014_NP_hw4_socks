@@ -14,6 +14,11 @@ void perror_and_exit(const char* str){
     exit(EXIT_FAILURE);
 }
 
+void perror_and_exit(const std::string& str){
+    perror(str.c_str());
+    exit(EXIT_FAILURE);
+}
+
 void error_print(const char* format ... ){
     /* print format string to stderr */
     va_list argptr;

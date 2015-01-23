@@ -4,6 +4,8 @@
 #include <string>
 
 void perror_and_exit(const char* str);
+void perror_and_exit(const std::string& str);
+
 void error_print(const char* format ... );
 void error_print_and_exit(const char* format ... );
 

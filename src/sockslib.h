@@ -17,6 +17,8 @@ public:
     std::string userid;
 
     Sock4Request();
+    Sock4Request(SocketAddr client_addr, unsigned char version, unsigned char command_code, SocketAddr dest_addr);
+    void to_byte_stream(unsigned char* buf);
     void print();
 };
 
