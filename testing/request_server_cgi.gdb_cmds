@@ -1,0 +1,9 @@
+file python
+set args ../testing/run_cgi.py
+
+br Request::send_batch_file_data_to_server_once
+
+define f_it
+    file python
+    set args ../testing/run_cgi.py
+end
