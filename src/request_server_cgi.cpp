@@ -288,7 +288,7 @@ void Request::connect_server_and_initial(bool is_nonblocking){
     /* initialization */
     /* if using socks4 protocol, send socks4 request and receive response */
     if( is_use_socks ){
-        Sock4Request socks4_request(socks_server_addr, 4, SOCKS4_CONNECT, req_server_addr);
+        Socks4Request socks4_request(socks_server_addr, 4, SOCKS4_CONNECT, req_server_addr);
         std::cout << "req_server_addr: " << req_server_addr.ipv4_addr_str << " " 
                   << req_server_addr.port_hbytes << std::endl;
         unsigned char buf[1024]; 

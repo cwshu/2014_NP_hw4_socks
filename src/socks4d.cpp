@@ -36,7 +36,7 @@ struct Socks4FirewallRules{
 };
 
 void socks4_service(socketfd_t client_socket, SocketAddr& client_addr);
-void socks4_request_reader_and_parser(Sock4Request& request, socketfd_t connection_socket);
+void socks4_request_reader_and_parser(Socks4Request& request, socketfd_t connection_socket);
 socketfd_t connect_to_app_server(SocketAddr server_addr);
 void relay_data_between_2_sockets(socketfd_t client_socket, socketfd_t server_socket);
 
@@ -125,7 +125,7 @@ void socks4_service(socketfd_t client_socket, SocketAddr& client_addr){
     firewall.print_rules();
 
     // 1. recieve and parse the socks request
-    Sock4Request request;
+    Socks4Request request;
     request.client_addr = client_addr;
     socks4_request_reader_and_parser(request, client_socket);
     request.print();
@@ -153,17 +153,17 @@ void socks4_service(socketfd_t client_socket, SocketAddr& client_addr){
         // 3. return socks response.
         if( server_socket < 0 ){
             std::cout << "connect to application server failed" << std::endl;
-            Sock4Response failed_response(SOCKS4_FAILED);
+            Socks4Response failed_response(SOCKS4_FAILED);
             unsigned char response_buf[SOCKS4_RES_LEN];
 
-            failed_response.to_buf(response_buf);
+            failed_response.to_byte_stream(response_buf);
             write_all(client_socket, response_buf, SOCKS4_RES_LEN);
             return;
         }
 
-        Sock4Response success_response(SOCKS4_SUCCESS);
+        Socks4Response success_response(SOCKS4_SUCCESS);
         unsigned char response_buf[SOCKS4_RES_LEN];
-        success_response.to_buf(response_buf);
+        success_response.to_byte_stream(response_buf);
         write_all(client_socket, response_buf, SOCKS4_RES_LEN);
 
         // 4. relay data between application client and server.
@@ -174,6 +174,7 @@ void socks4_service(socketfd_t client_socket, SocketAddr& client_addr){
         return;
     }
     else if( request.command_code == SOCKS4_BIND ){
+        // BIND:
         std::cout << "recieve BIND request" << std::endl;
 
         // 3. prepare one port for application server to connect.
@@ -183,9 +184,9 @@ void socks4_service(socketfd_t client_socket, SocketAddr& client_addr){
 
         // 4. return 1st socks response to client, tell the socket address.
         std::cout << "[BIND] listen ok" << std::endl;
-        Sock4Response listen_ok_response(SOCKS4_SUCCESS, bind_listen_addr);
+        Socks4Response listen_ok_response(SOCKS4_SUCCESS, bind_listen_addr);
         unsigned char response_buf[SOCKS4_RES_LEN];
-        listen_ok_response.to_buf(response_buf);
+        listen_ok_response.to_byte_stream(response_buf);
         write_all(client_socket, response_buf, SOCKS4_RES_LEN);
 
         // 5. wait for application server connection.
@@ -193,18 +194,18 @@ void socks4_service(socketfd_t client_socket, SocketAddr& client_addr){
         socketfd_t server_socket = socket_accept(bind_listen_socket, server_addr);
         if( server_socket < 0 ){
             std::cout << "[BIND] accept application server socket error" << std::endl;
-            Sock4Response failed_response(SOCKS4_FAILED);
+            Socks4Response failed_response(SOCKS4_FAILED);
             unsigned char response_buf[SOCKS4_RES_LEN];
 
-            failed_response.to_buf(response_buf);
+            failed_response.to_byte_stream(response_buf);
             write_all(client_socket, response_buf, SOCKS4_RES_LEN);
             return;
         }
 
         // 6. return 2nd socket response to client,
         std::cout << "[BIND] accept ok" << std::endl;
-        Sock4Response accept_ok_response(SOCKS4_SUCCESS);
-        accept_ok_response.to_buf(response_buf);
+        Socks4Response accept_ok_response(SOCKS4_SUCCESS);
+        accept_ok_response.to_byte_stream(response_buf);
         write_all(client_socket, response_buf, SOCKS4_RES_LEN);
 
         // 7. relay data between application client and server.
@@ -215,7 +216,7 @@ void socks4_service(socketfd_t client_socket, SocketAddr& client_addr){
 }
 
 const int MAX_REQUEST_SIZE = 1<<14;
-void socks4_request_reader_and_parser(Sock4Request& request, socketfd_t connection_socket){
+void socks4_request_reader_and_parser(Socks4Request& request, socketfd_t connection_socket){
     int total_size = 0;
     char request_buf[MAX_REQUEST_SIZE] = {0};
     int userid_index = 0;
