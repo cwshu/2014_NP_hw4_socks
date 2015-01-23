@@ -54,20 +54,7 @@ int main(int argc, char *argv[]){
         socks4_addr.port_hbytes = strtol(argv[1], NULL, 0);
     }
 
-    /* listening ras first */
-    socketfd_t sock4_listen_socket;
-    sock4_listen_socket = socket(AF_INET, SOCK_STREAM, 0);
-    if( sock4_listen_socket < 0 )
-        perror_and_exit("create socket error");
-
-    // int on = 1;
-    // setsockopt(sock4_listen_socket, SOL_SOCKET, SO_REUSEADDR, (const char *)&on, sizeof(on));
-
-    if( socket_bind(sock4_listen_socket, socks4_addr) < 0 )
-        perror_and_exit("bind error");
-    if( listen(sock4_listen_socket, 1) < 0)
-        perror_and_exit("listen error");
-
+    socketfd_t sock4_listen_socket = bind_and_listen_tcp_socket(socks4_addr);
     start_multiprocess_server(sock4_listen_socket, socks4_service);
     return 0;
 }
