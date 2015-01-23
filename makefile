@@ -48,7 +48,6 @@ ifeq ($(UNAME), FreeBSD)
 endif
 
 # release version
-
 all: release $(PART1_EXE_PATH) $(PART2_3_EXE_PATH)
 
 release:
@@ -71,7 +70,6 @@ $(PART2_3_EXE_PATH): $(PART2_3_OBJS_PATH)
 
 $(PART1_2_3_OBJS_PATH): $(PREFIX)/%.o: $(PART2_3_SRC_DIR)/%.cpp | $(PREFIX)
 	$(CXX) -o $@ $(CXXFLAGS) -c $<
-
 
 # test version
 tall: $(PART1_EXE_PATH_TEST) $(PART2_3_EXE_PATH_TEST)
@@ -96,4 +94,9 @@ $(PART1_2_3_OBJS_PATH_TEST): $(TEST_PREFIX)/%.o: $(TEST_SRC_DIR)/%.cpp | $(TEST_
 $(TEST_PREFIX) $(PREFIX) $(PART1_SRC_DIR) $(PART2_3_SRC_DIR): 
 	mkdir -p $@
 
-.PHONY: all clean tall tclean release rclean
+# test environment
+test: 
+	cp testing/batch_files/* test_build/
+	cp testing/form_for_request_server_cgi.html test_build/
+
+.PHONY: all clean tall tclean release rclean test
