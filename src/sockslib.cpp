@@ -45,6 +45,12 @@ Sock4Response::Sock4Response(unsigned char result_code){
     this->result_code = result_code;
 }
 
+Sock4Response::Sock4Response(unsigned char result_code, SocketAddr& dest_addr){
+    version = 0;
+    this->result_code = result_code;
+    this->dest_addr = dest_addr;
+}
+
 void Sock4Response::to_buf(unsigned char* buf){
     print();
 

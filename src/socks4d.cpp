@@ -43,6 +43,10 @@ void relay_data_between_2_sockets(socketfd_t client_socket, socketfd_t server_so
 const char SPILT_CHARS[] = " ";
 void open_and_parse_firewall_rule(Socks4FirewallRules& firewall_rules, std::string filename);
 void set_nonblocking_flag(socketfd_t fd);
+uint16_t get_idle_bind_port(){
+    /* XXX: just for test */
+    return 50000;
+}
 
 const char SOCKS4_IP[] = "0.0.0.0";
 const int SOCK4_DEFAULT_PORT = 54444;
@@ -171,6 +175,42 @@ void socks4_service(socketfd_t client_socket, SocketAddr& client_addr){
     }
     else if( request.command_code == SOCKS4_BIND ){
         std::cout << "recieve BIND request" << std::endl;
+
+        // 3. prepare one port for application server to connect.
+        uint16_t bind_listen_port = get_idle_bind_port();
+        SocketAddr bind_listen_addr("0.0.0.0", bind_listen_port);
+        socketfd_t bind_listen_socket = bind_and_listen_tcp_socket(bind_listen_addr);
+
+        // 4. return 1st socks response to client, tell the socket address.
+        std::cout << "[BIND] listen ok" << std::endl;
+        Sock4Response listen_ok_response(SOCKS4_SUCCESS, bind_listen_addr);
+        unsigned char response_buf[SOCKS4_RES_LEN];
+        listen_ok_response.to_buf(response_buf);
+        write_all(client_socket, response_buf, SOCKS4_RES_LEN);
+
+        // 5. wait for application server connection.
+        SocketAddr server_addr;
+        socketfd_t server_socket = socket_accept(bind_listen_socket, server_addr);
+        if( server_socket < 0 ){
+            std::cout << "[BIND] accept application server socket error" << std::endl;
+            Sock4Response failed_response(SOCKS4_FAILED);
+            unsigned char response_buf[SOCKS4_RES_LEN];
+
+            failed_response.to_buf(response_buf);
+            write_all(client_socket, response_buf, SOCKS4_RES_LEN);
+            return;
+        }
+
+        // 6. return 2nd socket response to client,
+        std::cout << "[BIND] accept ok" << std::endl;
+        Sock4Response accept_ok_response(SOCKS4_SUCCESS);
+        accept_ok_response.to_buf(response_buf);
+        write_all(client_socket, response_buf, SOCKS4_RES_LEN);
+
+        // 7. relay data between application client and server.
+        relay_data_between_2_sockets(client_socket, server_socket);
+        /* connection finish, both end are closing connection */
+        close(server_socket);
     }
 }
 

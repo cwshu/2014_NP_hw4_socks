@@ -35,6 +35,7 @@ public:
 
     Sock4Response();
     Sock4Response(unsigned char result_code);
+    Sock4Response(unsigned char result_code, SocketAddr& dest_addr);
     void to_buf(unsigned char* buf);
     void print();
 };
