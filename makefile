@@ -1,7 +1,7 @@
 # compiler related
 CC = gcc
 CFLAGS = -std=c99 -g
-CXX = clang++
+CXX = g++
 CXXFLAGS = -std=c++11 -g
 
 # prefix, src Directory
@@ -11,13 +11,13 @@ TEST_SRC_DIR = ./src
 PART1_SRC_DIR = ./part1
 PART2_3_SRC_DIR = ./part2_3
 
-# exe, objs without path, 
+# exe, objs without path
 PART1_EXE = request_server.cgi
 PART2_3_EXE = socks4d
-PART1_OBJS = request_server_cgi.o socket.o io_wrapper.o httplib.o
+PART1_OBJS = request_server_cgi.o socket.o io_wrapper.o httplib.o sockslib.o
 PART2_3_OBJS = socks4d.o server_arch.o socket.o io_wrapper.o sockslib.o string_more.o
 
-# exe, objs with path, 
+# exe, objs with path
 PART1_EXE_PATH_TEST = $(addprefix $(TEST_PREFIX)/, $(PART1_EXE))
 PART1_OBJS_PATH_TEST = $(addprefix $(TEST_PREFIX)/, $(PART1_OBJS))
 PART2_3_EXE_PATH_TEST = $(addprefix $(TEST_PREFIX)/, $(PART2_3_EXE))
