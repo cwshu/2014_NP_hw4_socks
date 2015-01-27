@@ -8,6 +8,7 @@ typedef void (*OneConnectionService)(socketfd_t connection_socket, SocketAddr& c
     /* for example, telnet_service, http_service */
 
 socketfd_t bind_and_listen_tcp_socket(SocketAddr& listen_addr);
+socketfd_t bind_and_listen_tcp_socket_incre(SocketAddr& listen_addr);
 
 void start_multiprocess_server(socketfd_t listen_socket, OneConnectionService service_function);
     /* helping closing client_socket, so service_function doesn't need close it.

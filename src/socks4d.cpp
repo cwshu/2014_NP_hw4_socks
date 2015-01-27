@@ -180,10 +180,12 @@ void socks4_service(socketfd_t client_socket, SocketAddr& client_addr){
         // 3. prepare one port for application server to connect.
         uint16_t bind_listen_port = get_idle_bind_port();
         SocketAddr bind_listen_addr("0.0.0.0", bind_listen_port);
-        socketfd_t bind_listen_socket = bind_and_listen_tcp_socket(bind_listen_addr);
+        socketfd_t bind_listen_socket = bind_and_listen_tcp_socket_incre(bind_listen_addr);
 
         // 4. return 1st socks response to client, tell the socket address.
-        std::cout << "[BIND] listen ok" << std::endl;
+        std::cerr << "[BIND] listen ok at "
+                  << bind_listen_addr.ipv4_addr_str << ":" << bind_listen_addr.port_hbytes
+                  << std::endl;
         Socks4Response listen_ok_response(SOCKS4_SUCCESS, bind_listen_addr);
         unsigned char response_buf[SOCKS4_RES_LEN];
         listen_ok_response.to_byte_stream(response_buf);
